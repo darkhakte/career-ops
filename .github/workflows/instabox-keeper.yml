@@ -1,0 +1,40 @@
+name: InstaBox 24/7 Keeper
+
+on:
+  schedule:
+    # Runs every 7 hours (just before the 8-hour max runtime limit)
+    - cron: '0 */7 * * *'
+  workflow_dispatch: # Allows manual 1-click trigger from GitHub UI
+
+jobs:
+  wake-sandbox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger InstaBox Start API
+        run: |
+          echo "Starting InstaBox Sandbox m_agq3itmn4v6t2boz2lt6lh2iv4..."
+          
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            "https://api.instabox.sh/v1/machines/m_agq3itmn4v6t2boz2lt6lh2iv4/start" \
+            -H "Authorization: Bearer ${{ secrets.INSTABOX_API }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | sed '/HTTP_STATUS/d')
+          
+          echo "Status Code: $HTTP_STATUS"
+          echo "API Response: $BODY"
+          
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "Sandbox successfully signaled to start!"
+          else
+            echo "API returned unexpected status: $HTTP_STATUS"
+          fi
+
+      - name: Wait for Services & Verify Health
+        run: |
+          echo "Waiting 20 seconds for systemd and PM2 to boot..."
+          sleep 20
+          
+          echo "Checking Ngrok dashboard..."
+          curl -I -s "https://handstand-morse-verbally.ngrok-free.dev" || true
