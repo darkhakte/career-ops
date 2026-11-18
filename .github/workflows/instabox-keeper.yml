@@ -2,9 +2,9 @@ name: InstaBox 24/7 Keeper
 
 on:
   schedule:
-    # Runs every 7 hours (just before the 8-hour max runtime limit)
-    - cron: '0 */7 * * *'
-  workflow_dispatch: # Allows manual 1-click trigger from GitHub UI
+    # Runs every 25 minutes to prevent the 30-minute idle sleep
+    - cron: '*/25 * * * *'
+  workflow_dispatch:
 
 jobs:
   wake-sandbox:
